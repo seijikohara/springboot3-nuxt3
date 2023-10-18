@@ -1,8 +1,9 @@
 FROM node:18 AS nodeBuilder
 WORKDIR /app
 COPY ./frontend ./
+RUN npm -g upgrade
 RUN npm install
-RUN npx nuxi generate
+RUN npm run generate
 
 FROM eclipse-temurin:17-jdk AS jdkBuilder
 WORKDIR /app
