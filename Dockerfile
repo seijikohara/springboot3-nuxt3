@@ -1,4 +1,4 @@
-FROM node:20 AS nodeBuilder
+FROM node:22 AS nodeBuilder
 WORKDIR /app
 COPY ./frontend ./
 RUN npm -g upgrade
