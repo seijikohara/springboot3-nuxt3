@@ -9,13 +9,11 @@ import org.springframework.web.reactive.function.server.bodyValueAndAwait
 
 @Component
 class IndexHandler(
-    private val applicationProperties: ApplicationProperties
+    private val applicationProperties: ApplicationProperties,
 ) {
-
-    suspend fun getIndex(request: ServerRequest): ServerResponse {
-        return ServerResponse.ok()
+    suspend fun getIndex(request: ServerRequest): ServerResponse =
+        ServerResponse
+            .ok()
             .contentType(MediaType.TEXT_HTML)
             .bodyValueAndAwait(applicationProperties.indexFile)
-    }
-
 }
