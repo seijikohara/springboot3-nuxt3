@@ -1,11 +1,16 @@
+import com.github.gradle.node.npm.task.NpmSetupTask
+import com.github.gradle.node.task.NodeSetupTask
+import org.gradle.kotlin.dsl.named
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
-    id("org.springframework.boot") version "3.5.3"
-    id("io.spring.dependency-management") version "1.1.7"
     kotlin("jvm") version "2.2.0"
     kotlin("plugin.spring") version "2.2.0"
+    id("org.springframework.boot") version "3.5.3"
+    id("io.spring.dependency-management") version "1.1.7"
     id("com.github.ben-manes.versions") version "0.51.0"
+    id("com.github.node-gradle.node") version "7.1.0"
+    id("com.diffplug.spotless") version "7.1.0"
 }
 
 group = "com.example"
@@ -62,4 +67,84 @@ tasks.withType<Test> {
 
 tasks.withType<BootJar> {
     archiveFileName.set("app.jar")
+}
+
+node {
+    version = "22.17.0"
+    download = true
+}
+
+spotless {
+    fun isWindows() =
+        org.gradle.internal.os.OperatingSystem
+            .current()
+            .isWindows
+
+    fun resolveExecutable(command: String) = if (isWindows()) "bin/$command.exe" else "bin/$command"
+
+    fun resolveNodeExecutable() = "${tasks.named<NodeSetupTask>("nodeSetup").get().nodeDir.get()}/${resolveExecutable("node")}"
+
+    fun resolveNpmExecutable() = "${tasks.named<NpmSetupTask>("npmSetup").get().npmDir.get()}/${resolveExecutable("npm")}"
+
+    val defaultTargetExcludes =
+        listOf(
+            ".git/**",
+            ".gradle/**",
+            ".idea/**",
+            "bin/**",
+            "build/**",
+            "gradle/**",
+            "frontend/.nuxt/**",
+            "frontend/.output/**",
+            "frontend/dist/**",
+            "frontend/node_modules/**",
+            "src/main/resources/static/**",
+        )
+    val prettierVersion = "prettier" to "3.6.2"
+    val prettierPluginShVersion = "prettier-plugin-sh" to "0.18.0"
+
+    kotlin {
+        target("**/*.kt")
+        targetExclude(defaultTargetExcludes)
+        toggleOffOn()
+        ktlint()
+    }
+    kotlinGradle {
+        target("**/*.gradle.kts")
+        targetExclude(defaultTargetExcludes)
+        toggleOffOn()
+        ktlint()
+    }
+    format("prettier") {
+        target("**/*.json", "**/*.js", "**/*.md", "**/*.yml", "**/*.yaml")
+        targetExclude(defaultTargetExcludes)
+        prettier(mapOf(prettierVersion))
+            .nodeExecutable(resolveNodeExecutable())
+            .npmExecutable(resolveNpmExecutable())
+        endWithNewline()
+    }
+    format("sh") {
+        target("**/Dockerfile", "**/*.env", "**/.gitignore", "**/*.sh")
+        targetExclude(defaultTargetExcludes)
+        prettier(mapOf(prettierVersion, prettierPluginShVersion))
+            .nodeExecutable(resolveNodeExecutable())
+            .npmExecutable(resolveNpmExecutable())
+            .config(
+                mapOf(
+                    "plugins" to listOf("prettier-plugin-sh"),
+                    "indent" to 4,
+                ),
+            )
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+
+    tasks.configureEach {
+        when (name) {
+            "spotlessPrettier", "spotlessSh" ->
+                dependsOn(
+                    tasks.named("nodeSetup"),
+                )
+        }
+    }
 }

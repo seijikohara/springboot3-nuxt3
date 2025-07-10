@@ -13,14 +13,12 @@ class ApplicationConfig
 data class ApplicationProperties(
     val apiBasePath: String,
     val indexFile: Resource,
-    val cors: CorsProperties
+    val cors: CorsProperties,
 ) {
-
     data class CorsProperties(
         val mappingPathPattern: String,
         val allowedOrigins: List<String>,
         val allowedMethods: List<String>,
-        val maxAge: Long
+        val maxAge: Long,
     )
-
 }

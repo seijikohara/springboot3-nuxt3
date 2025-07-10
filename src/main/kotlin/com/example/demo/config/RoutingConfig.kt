@@ -13,15 +13,14 @@ class RoutingConfig(
     private val indexHandler: IndexHandler,
     private val helloHandler: HelloHandler,
 ) {
-
     @Bean
-    fun apiRouter() = coRouter {
-        accept(MediaType.ALL).nest {
-            GET("/*", indexHandler::getIndex)
-            (applicationProperties.apiBasePath).nest {
-                GET("/hello", helloHandler::getHello)
+    fun apiRouter() =
+        coRouter {
+            accept(MediaType.ALL).nest {
+                GET("/*", indexHandler::getIndex)
+                (applicationProperties.apiBasePath).nest {
+                    GET("/hello", helloHandler::getHello)
+                }
             }
         }
-    }
-
 }
