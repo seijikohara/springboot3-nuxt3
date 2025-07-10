@@ -1,5 +1,5 @@
 services:
-  web:
+  app:
     build: .
     ports:
       - "18080:18080"
