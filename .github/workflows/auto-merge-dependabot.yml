@@ -1,17 +1,31 @@
-name: Auto-merge Dependabot PRs
+name: Auto-Merge Dependabot PRs
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
-  auto-merge:
-    if: github.actor == 'dependabot[bot]'
+  auto-merge-dependabot-prs:
+    name: Auto-Merge Dependabot Dependency PR
     runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    permissions:
+      pull-requests: write
+
     steps:
-      - name: Auto-merge Dependabot PR
-        run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body "@dependabot merge"
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.DEV_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.DEV_AUTOMATION_PRIVATE_KEY }}
+
+      - name: Comment to trigger Dependabot merge
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment $PR_NUMBER --body "@dependabot merge"
