@@ -23,6 +23,12 @@ jobs:
           app-id: ${{ vars.DEV_AUTOMATION_APP_ID }}
           private-key: ${{ secrets.DEV_AUTOMATION_PRIVATE_KEY }}
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          fetch-depth: 0 # Ensure full history is available for commit
+
       - name: Comment to trigger Dependabot merge
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
