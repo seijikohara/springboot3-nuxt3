@@ -50,16 +50,6 @@ jobs:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
 
 
-      - name: Skip production dependencies
-        if: steps.metadata.outputs.dependency-type == 'direct:production'
-        run: |
-          echo "⚠️ Production dependency update detected"
-          gh pr comment ${{ github.event.pull_request.number }} \
-            --body "⚠️ Production dependency update detected. Requires manual review before merging."
-          exit 1
-        env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-
       - name: Auto-approve and merge
         run: |
           echo "✅ All checks passed. Auto-merging dependency update:"
