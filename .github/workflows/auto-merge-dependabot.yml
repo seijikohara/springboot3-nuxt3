@@ -27,7 +27,8 @@ jobs:
         with:
           app-id: ${{ vars.DEV_AUTOMATION_APP_ID }}
           private-key: ${{ secrets.DEV_AUTOMATION_PRIVATE_KEY }}
-          repositories: ${{ github.repository }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
 
       - name: Fetch Dependabot metadata
         id: metadata
@@ -62,7 +63,7 @@ jobs:
             --body "✅ Auto-approved ${{ steps.metadata.outputs.update-type }} update for ${{ steps.metadata.outputs.dependency-names }}"
 
           # Enable auto-merge
-          gh pr merge ${{ github.event.pull_request.number }} --auto --squash
+          gh pr merge ${{ github.event.pull_request.number }} --auto
 
           # Add success comment
           gh pr comment ${{ github.event.pull_request.number }} \
