@@ -1,24 +1,36 @@
 import com.github.gradle.node.npm.task.NpmSetupTask
 import com.github.gradle.node.task.NodeSetupTask
+import org.gradle.api.plugins.jvm.JvmTestSuite
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.named
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
-    kotlin("jvm") version "2.2.20"
-    kotlin("plugin.spring") version "2.2.21"
-    id("org.springframework.boot") version "3.5.7"
-    id("io.spring.dependency-management") version "1.1.7"
-    id("com.github.ben-manes.versions") version "0.53.0"
-    id("com.github.node-gradle.node") version "7.1.0"
-    id("com.diffplug.spotless") version "8.0.0"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.gradle.node)
+    alias(libs.plugins.version.catalog.update)
+    alias(libs.plugins.spotless)
 }
 
 group = "com.example"
 version = "0.0.1-SNAPSHOT"
 
+repositories {
+    mavenCentral()
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xjsr305=strict")
     }
 }
 
@@ -28,64 +40,58 @@ configurations {
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation(libs.jackson.module.kotlin)
+    implementation(libs.reactor.kotlin.extensions)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.kotlinx.coroutines.reactor)
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.webflux)
 
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    developmentOnly(libs.spring.boot.devtools)
 
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-
-    testImplementation("io.kotest:kotest-assertions-core:5.9.1")
-    testImplementation("io.kotest:kotest-runner-junit5:5.9.1")
-    testImplementation("io.kotest.extensions:kotest-extensions-spring:1.3.0")
-    testImplementation("io.mockk:mockk:1.14.6")
-    testImplementation("io.projectreactor:reactor-test")
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    annotationProcessor(libs.spring.boot.configuration.processor)
 }
 
-kotlin {
-    compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
+testing {
+    suites {
+        val test by getting(JvmTestSuite::class) {
+            useJUnitJupiter()
+
+            dependencies {
+                implementation(platform(libs.kotest.bom))
+                implementation(libs.kotest.assertions.core)
+                implementation(libs.kotest.extensions.spring)
+                implementation(libs.kotest.runner.junit5)
+                implementation(libs.mockk)
+                implementation(libs.reactor.test)
+                implementation(libs.spring.boot.starter.test)
+            }
+        }
     }
 }
 
-tasks.withType<Test> {
-    useJUnitPlatform()
-}
-
-tasks.withType<BootJar> {
-    archiveFileName.set("app.jar")
+tasks {
+    withType<BootJar> {
+        archiveFileName.set("app.jar")
+    }
 }
 
 node {
-    version = "22.17.0"
+    version = "24.11.0"
     download = true
 }
 
 spotless {
-    fun isWindows() =
+    val isWindows =
         org.gradle.internal.os.OperatingSystem
             .current()
             .isWindows
-
-    fun resolveExecutable(command: String) = if (isWindows()) "bin/$command.exe" else "bin/$command"
-
-    fun resolveNodeExecutable() = "${tasks.named<NodeSetupTask>("nodeSetup").get().nodeDir.get()}/${resolveExecutable("node")}"
-
-    fun resolveNpmExecutable() = "${tasks.named<NpmSetupTask>("npmSetup").get().npmDir.get()}/${resolveExecutable("npm")}"
-
+    val executable: (String) -> String = { if (isWindows) "$it.exe" else "bin/$it" }
+    val nodeExecutable by lazy { "${tasks.named<NodeSetupTask>("nodeSetup").get().nodeDir.get()}/${executable("node")}" }
+    val npmExecutable by lazy { "${tasks.named<NpmSetupTask>("npmSetup").get().npmDir.get()}/${executable("npm")}" }
+    val prettier = "prettier" to "3.6.2"
+    val prettierPluginSh = "prettier-plugin-sh" to "0.18.0"
     val defaultTargetExcludes =
         listOf(
             ".git/**",
@@ -94,14 +100,9 @@ spotless {
             "bin/**",
             "build/**",
             "gradle/**",
-            "frontend/.nuxt/**",
-            "frontend/.output/**",
-            "frontend/dist/**",
-            "frontend/node_modules/**",
+            "frontend/**",
             "src/main/resources/static/**",
         )
-    val prettierVersion = "prettier" to "3.6.2"
-    val prettierPluginShVersion = "prettier-plugin-sh" to "0.18.0"
 
     kotlin {
         target("**/*.kt")
@@ -118,17 +119,17 @@ spotless {
     format("prettier") {
         target("**/*.json", "**/*.js", "**/*.md", "**/*.yml", "**/*.yaml")
         targetExclude(defaultTargetExcludes)
-        prettier(mapOf(prettierVersion))
-            .nodeExecutable(resolveNodeExecutable())
-            .npmExecutable(resolveNpmExecutable())
+        prettier(mapOf(prettier))
+            .nodeExecutable(nodeExecutable)
+            .npmExecutable(npmExecutable)
         endWithNewline()
     }
     format("sh") {
         target("**/Dockerfile", "**/*.env", "**/.gitignore", "**/*.sh")
         targetExclude(defaultTargetExcludes)
-        prettier(mapOf(prettierVersion, prettierPluginShVersion))
-            .nodeExecutable(resolveNodeExecutable())
-            .npmExecutable(resolveNpmExecutable())
+        prettier(mapOf(prettier, prettierPluginSh))
+            .nodeExecutable(nodeExecutable)
+            .npmExecutable(npmExecutable)
             .config(
                 mapOf(
                     "plugins" to listOf("prettier-plugin-sh"),
@@ -139,12 +140,9 @@ spotless {
         endWithNewline()
     }
 
-    tasks.configureEach {
-        when (name) {
-            "spotlessPrettier", "spotlessSh" ->
-                dependsOn(
-                    tasks.named("nodeSetup"),
-                )
+    listOf("spotlessPrettier", "spotlessSh").forEach { taskName ->
+        tasks.named(taskName) {
+            dependsOn(tasks.named("nodeSetup"))
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.example.demo.handler
 
+import io.kotest.core.extensions.ApplyExtension
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
@@ -9,6 +11,7 @@ import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.server.ServerRequest
 
 @SpringBootTest
+@ApplyExtension(SpringExtension::class)
 class IndexHandlerSpec(
     private val indexHandler: IndexHandler,
 ) : FunSpec() {
