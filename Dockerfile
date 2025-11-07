@@ -1,18 +1,18 @@
-FROM node:22 AS nodeBuilder
+FROM node:24 AS frontend-builder
 WORKDIR /app
 COPY ./frontend ./
 RUN npm -g upgrade
 RUN npm install
 RUN npm run generate
 
-FROM eclipse-temurin:21-jdk AS jdkBuilder
+FROM eclipse-temurin:21-jdk AS backend-builder
 WORKDIR /app
 COPY ./ ./
-COPY --from=nodeBuilder /app/.output/public ./src/main/resources/static
+COPY --from=frontend-builder /app/.output/public ./src/main/resources/static
 RUN ./gradlew build -x test --no-daemon --stacktrace
 
-FROM eclipse-temurin:21-jre
+FROM gcr.io/distroless/java21-debian12
 WORKDIR /app
-COPY --from=jdkBuilder /app/build/libs/app.jar ./app.jar
+COPY --from=backend-builder /app/build/libs/app.jar ./app.jar
 EXPOSE 18080
 ENTRYPOINT ["java", "-jar", "./app.jar"]
