@@ -12,7 +12,7 @@
     "deps:check": "npx npm-check-updates"
   },
   "dependencies": {
-    "nuxt": "^4.2.2",
+    "nuxt": "^4.3.0",
     "vue": "^3.5.27",
     "vue-router": "^4.6.4"
   }
