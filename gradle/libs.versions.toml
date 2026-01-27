@@ -4,7 +4,7 @@ kotest = "6.1.1"
 kotlin = "2.3.0"
 mockk = "1.14.7"
 spotless = "8.2.0"
-spring-boot = "4.0.1"
+spring-boot = "4.0.2"
 spring-dependency-management = "1.1.7"
 version-catalog-update = "1.0.1"
 
